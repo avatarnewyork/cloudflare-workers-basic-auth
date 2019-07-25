@@ -1,0 +1,9 @@
+name = ""
+type = ""
+zone_id = ""
+private = true
+account_id = ""
+route = ""
+[webauth]
+binding = "webauth"
+id = ""

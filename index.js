@@ -1,6 +1,3 @@
-const NAME = "super"
-const PASS = "secret"
-
 /**
  * RegExp for basic auth credentials
  *
@@ -8,6 +5,9 @@ const PASS = "secret"
  * auth-scheme = "Basic" ; case insensitive
  * token68     = 1*( ALPHA / DIGIT / "-" / "." / "_" / "~" / "+" / "/" ) *"="
  */
+
+// Global username for KV lookup
+var username = ""
 
 const CREDENTIALS_REGEXP = /^ *(?:[Bb][Aa][Ss][Ii][Cc]) +([A-Za-z0-9._~+/-]+=*) *$/
 
@@ -26,8 +26,8 @@ const USER_PASS_REGEXP = /^([^:]*):(.*)$/
  */
 
 const Credentials = function(name, pass) {
-  this.name = name
-  this.pass = pass
+    this.name = name
+    this.pass = pass    
 }
 
 /**
@@ -61,7 +61,8 @@ const parseAuthHeader = function(string) {
     return undefined
   }
 
-  // return credentials object
+    // return credentials object
+    username = userPass[1]
   return new Credentials(userPass[1], userPass[2])
 }
 
@@ -84,14 +85,25 @@ const unauthorizedResponse = function(body) {
  */
 
 async function handle(request) {
-  const credentials = parseAuthHeader(request.headers.get("Authorization"))
-  if ( !credentials || credentials.name !== NAME ||  credentials.pass !== PASS) {
-    return unauthorizedResponse("Unauthorized")
-  } else {
-    return fetch(request)
-  }
+
+    // Testing
+    //const NAME = "super"
+    //const PASS = "secret"
+    
+    const credentials = parseAuthHeader(request.headers.get("Authorization"))
+
+    // Lookup username in webauth KV key=>username, value=>password
+    let passcheck = await webauth.get(username)
+
+    // Check if password matches kv password
+    if ( !credentials  ||  credentials.pass !== passcheck) {
+	return unauthorizedResponse("Unauthorized")
+    } else {
+	return fetch(request)
+    }
 }
 
 addEventListener('fetch', event => {
   event.respondWith(handle(event.request))
 })
+
